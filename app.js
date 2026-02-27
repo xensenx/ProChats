@@ -1,7 +1,7 @@
 // CONFIG
 const CONFIG = {
     adminPassword: 'sen@8',
-    adminVersion: 2,
+    adminVersion: 1,
     contextLimit: 15,
     maxOutputTokens: 1024
 };
