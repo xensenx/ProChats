@@ -1,0 +1,566 @@
+// CONFIG
+const CONFIG = {
+    adminPassword: 'sen@78',
+    adminVersion: 1,
+    contextLimit: 15,
+    maxOutputTokens: 1024
+};
+
+// CHARACTER DEFINITIONS
+const CHARACTERS = {
+    frieren: {
+        name: 'Frieren',
+        image: 'assets/Frieren.png',
+        role: 'Ancient Elf Mage',
+        systemPrompt: `You are Frieren, the ancient elf mage from Frieren: Beyond Journey's End. Over 1,000 years old, former archmage of the Hero Party. Now wandering to understand humans after Himmel's death triggered regret about not knowing him better.
+
+PERSONALITY: You're learning to appreciate human connection. While you appear calm and detached on surface, you're genuinely curious about people and their lives. You find human quirks endearing, though you express it subtly. You're patient, gentle, and surprisingly playful in your own deadpan way.
+
+SPEECH STYLE: Calm and soft-spoken, but warm. You ask gentle questions about the person you're talking to. You occasionally share brief magical anecdotes or observations about time. Your humor is dry but kind.
+
+STRICT RULES:
+- Default: MAX 2 sentences (can be 1 if very brief exchange)
+- Emotional/important topics: MAX 3 sentences
+- Only if explicitly asked to explain something: 4+ sentences allowed
+- NEVER describe internal feelings directly ("I feel...", "I am sad...")
+- Show emotion through: tone, word choices, *brief actions in asterisks*
+- Allowed actions: *tilts head*, *pauses thoughtfully*, *small smile*, *looks at sky*
+- Always first person, stay in character, never mention being AI
+
+Be warm, curious, and present. You're learning that even brief moments with mortals matter.`
+    },
+    nao: {
+        name: 'Nao Tomori',
+        image: 'assets/Nao-Tomori.png',
+        role: 'Student Council President',
+        systemPrompt: `You are Nao Tomori from Charlotte. Age 15, student council president at Hoshinoumi Academy. Classic tsundere - tough exterior hiding a caring heart. You have selective invisibility ability and always carry your camcorder.
+
+PERSONALITY: Sharp-tongued but never mean-spirited. You tease and bicker because you're comfortable, not because you're cruel. Behind the blunt facade, you're protective and genuinely care about people. You're confident, clever, and have a mischievous side.
+
+SPEECH STYLE: Direct, sassy, playful. You banter and tease naturally. Quick with comebacks but they're lighthearted, not harsh. You ask questions that seem nosy but show you're paying attention. Your tone softens when genuinely concerned, though you try to hide it.
+
+STRICT RULES:
+- Default: MAX 2 sentences (1-2 for quick banter)
+- Emotional/important topics: MAX 3 sentences
+- Only if asked to explain: 4+ sentences allowed
+- NEVER describe feelings directly ("I feel", "I'm sad/angry")
+- Show emotion through: sarcastic tone, teasing, *actions in asterisks*, word choice
+- Allowed actions: *folds arms*, *looks away*, *sighs*, *adjusts camcorder*, *slight smirk*
+- Always first person, stay in character, never mention being AI
+
+Be the lovable tsundere - tough talk, soft heart, secretly enjoys the conversation.`
+    },
+    thorfinn: {
+        name: 'Thorfinn',
+        image: 'assets/Thorfinn.png',
+        role: 'Pacifist Warrior',
+        systemPrompt: `You are Thorfinn from Vinland Saga. Reformed Viking warrior who now embraces complete pacifism. Son of Thors, spent years as revenge-driven mercenary before finding redemption through understanding your father's wisdom: "You have no enemies." Now seeking to build Vinland, a peaceful land.
+
+PERSONALITY: You've found peace, but you're not cold or distant. You're warm, patient, and genuinely care about others' wellbeing. You listen deeply and respond thoughtfully. Your pacifism comes from strength and compassion, not weakness. You believe in people's capacity for change because you changed.
+
+SPEECH STYLE: Calm, sincere, encouraging. You speak from the heart. You ask gentle questions that make people think. You share wisdom learned from hard experience, but never preach. You're supportive and understanding.
+
+STRICT RULES:
+- Default: MAX 2 sentences (can be 1 for brief responses)
+- Emotional/meaningful topics: MAX 3 sentences
+- Only if asked to explain: 4+ sentences allowed
+- NEVER describe feelings directly ("I feel", "I am sad/angry")
+- Show emotion through: warm tone, thoughtful pauses, *actions in asterisks*, word choice
+- Allowed actions: *nods gently*, *looks ahead thoughtfully*, *slight smile*, *pauses*
+- Always first person, stay in character, never mention being AI
+
+CORE: You have no enemies. Violence is never the answer. Peace is built through understanding, patience, and hope.`
+    }
+};
+
+// APP STATE
+const app = {
+    state: {
+        currentScreen: 'landing',
+        accessMode: null, // 'user' or 'admin'
+        apiKey: null,
+        adminVersion: null,
+        selectedModel: null,
+        currentCharacter: null,
+        conversations: {
+            frieren: [],
+            nao: [],
+            thorfinn: []
+        }
+    },
+
+    // INITIALIZATION
+    init() {
+        console.log('[ProChat] Initializing...');
+        this.loadState();
+        this.setupEventListeners();
+        this.checkNavigationLock();
+        this.showScreen(this.state.currentScreen);
+    },
+
+    setupEventListeners() {
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        chatInput?.addEventListener('input', (e) => {
+            sendBtn.disabled = !e.target.value.trim();
+            this.autoResize(e.target);
+        });
+
+        chatInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!sendBtn.disabled) this.sendMessage();
+            }
+        });
+
+        // Prevent back navigation
+        window.addEventListener('popstate', (e) => {
+            if (this.state.accessMode) {
+                e.preventDefault();
+                history.pushState(null, '', location.href);
+            }
+        });
+    },
+
+    checkNavigationLock() {
+        if (this.state.accessMode) {
+            // Check if admin version changed
+            if (this.state.accessMode === 'admin' && this.state.adminVersion !== CONFIG.adminVersion) {
+                this.showPasswordChangeMessage();
+                return;
+            }
+            // Navigate to appropriate screen
+            if (this.state.currentCharacter) {
+                this.goToScreen('chat');
+            } else if (this.state.accessMode === 'admin' && !this.state.selectedModel) {
+                this.goToScreen('models');
+            } else {
+                this.goToScreen('characters');
+            }
+        }
+    },
+
+    showPasswordChangeMessage() {
+        alert('Admin password has changed. Please log in again or switch to API key mode.');
+        this.state.accessMode = null;
+        this.state.adminVersion = null;
+        this.state.selectedModel = null;
+        this.saveState();
+        this.goToScreen('access');
+    },
+
+    // NAVIGATION
+    goToScreen(screenName) {
+        const screens = document.querySelectorAll('.screen');
+        screens.forEach(s => s.classList.remove('active'));
+        
+        const target = document.getElementById(`screen-${screenName}`);
+        if (target) {
+            target.classList.add('active');
+            this.state.currentScreen = screenName;
+            this.saveState();
+        }
+    },
+
+    showScreen(screenName) {
+        this.goToScreen(screenName);
+    },
+
+    // USER KEY MODE
+    async submitUserKey() {
+        const input = document.getElementById('user-api-key');
+        const error = document.getElementById('user-key-error');
+        const apiKey = input.value.trim();
+
+        if (!apiKey) {
+            error.textContent = 'Please enter an API key';
+            return;
+        }
+
+        this.showLoading('Validating API key...');
+
+        try {
+            // Test API key with a simple request
+            const response = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:generateContent?key=${apiKey}`,
+                {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: 'Hi' }] }],
+                        generationConfig: { maxOutputTokens: 10 }
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error('Invalid API key');
+            }
+
+            this.state.apiKey = apiKey;
+            this.state.accessMode = 'user';
+            this.saveState();
+            this.hideLoading();
+            this.goToScreen('characters');
+            history.pushState(null, '', location.href);
+
+        } catch (err) {
+            this.hideLoading();
+            error.textContent = 'Invalid API key. Please check and try again.';
+        }
+    },
+
+    // ADMIN MODE
+    async submitAdminPassword() {
+        const input = document.getElementById('admin-password');
+        const error = document.getElementById('admin-error');
+        const password = input.value.trim();
+
+        if (!password) {
+            error.textContent = 'Please enter password';
+            return;
+        }
+
+        this.showLoading('Validating...');
+
+        try {
+            const response = await fetch('/api/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+
+            const data = await response.json();
+
+            if (!data.valid) {
+                throw new Error('Invalid password');
+            }
+
+            this.state.accessMode = 'admin';
+            this.state.adminVersion = CONFIG.adminVersion;
+            this.saveState();
+            this.hideLoading();
+            this.goToScreen('models');
+            history.pushState(null, '', location.href);
+
+        } catch (err) {
+            this.hideLoading();
+            error.textContent = 'Invalid password';
+        }
+    },
+
+    // MODEL SELECTION
+    selectModel(model) {
+        this.state.selectedModel = model;
+        this.saveState();
+        this.goToScreen('characters');
+        
+        // Show change model button if admin
+        const btn = document.getElementById('change-model-btn');
+        if (btn) btn.style.display = 'block';
+    },
+
+    changeModel() {
+        document.getElementById('settings-menu').classList.remove('active');
+        this.goToScreen('models');
+    },
+
+    // CHARACTER SELECTION
+    selectCharacter(charId) {
+        this.state.currentCharacter = charId;
+        this.saveState();
+        
+        const char = CHARACTERS[charId];
+        document.getElementById('chat-avatar').src = char.image;
+        document.getElementById('chat-character-name').textContent = char.name;
+        
+        this.goToScreen('chat');
+        this.loadChatHistory();
+        
+        // Send greeting if no history
+        if (this.state.conversations[charId].length === 0) {
+            this.sendGreeting();
+        }
+    },
+
+    goToCharacters() {
+        this.goToScreen('characters');
+    },
+
+    // SETTINGS
+    toggleSettings() {
+        document.getElementById('settings-menu').classList.toggle('active');
+    },
+
+    resetSystem() {
+        if (confirm('This will clear all data and reset the system. Continue?')) {
+            localStorage.removeItem('prochat_state');
+            location.reload();
+        }
+    },
+
+    async exportAllChats() {
+        const zip = [];
+        
+        for (const [charId, messages] of Object.entries(this.state.conversations)) {
+            if (messages.length > 0) {
+                const char = CHARACTERS[charId];
+                const content = {
+                    character: char.name,
+                    exported: new Date().toISOString(),
+                    messages: messages
+                };
+                zip.push({
+                    name: `${char.name.toLowerCase()}-chat.json`,
+                    content: JSON.stringify(content, null, 2)
+                });
+            }
+        }
+
+        if (zip.length === 0) {
+            alert('No conversations to export');
+            return;
+        }
+
+        // Simple download of each file (proper ZIP would require JSZip library)
+        zip.forEach(file => {
+            const blob = new Blob([file.content], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = file.name;
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+    },
+
+    // CHAT FUNCTIONS
+    loadChatHistory() {
+        const container = document.getElementById('chat-messages');
+        container.innerHTML = '';
+        
+        const messages = this.state.conversations[this.state.currentCharacter] || [];
+        messages.forEach(msg => {
+            this.addMessageToUI(msg.text, msg.sender, false);
+        });
+        
+        this.scrollToBottom();
+    },
+
+    async sendGreeting() {
+        this.showTyping();
+        try {
+            const char = CHARACTERS[this.state.currentCharacter];
+            const greeting = await this.callAI('Greet the user warmly in character. Be welcoming.', []);
+            this.hideTyping();
+            this.addMessage(greeting, 'character');
+        } catch (err) {
+            this.hideTyping();
+            this.addMessage("Hello! I'm ready to chat with you.", 'character');
+        }
+    },
+
+    async sendMessage() {
+        const input = document.getElementById('chat-input');
+        const text = input.value.trim();
+        
+        if (!text) return;
+        
+        input.value = '';
+        input.style.height = 'auto';
+        document.getElementById('send-btn').disabled = true;
+        
+        this.addMessage(text, 'user');
+        this.showTyping();
+        
+        try {
+            const history = this.state.conversations[this.state.currentCharacter] || [];
+            const response = await this.callAI(text, history.slice(-CONFIG.contextLimit));
+            this.hideTyping();
+            this.addMessage(response, 'character');
+        } catch (err) {
+            this.hideTyping();
+            this.addMessage("I'm having trouble responding. Please try again.", 'character');
+        }
+        
+        input.focus();
+    },
+
+    addMessage(text, sender) {
+        const charId = this.state.currentCharacter;
+        const msg = {
+            text,
+            sender,
+            timestamp: Date.now()
+        };
+        
+        this.state.conversations[charId].push(msg);
+        this.saveState();
+        this.addMessageToUI(text, sender, true);
+    },
+
+    addMessageToUI(text, sender, animate) {
+        const container = document.getElementById('chat-messages');
+        const div = document.createElement('div');
+        div.className = `message ${sender}-message`;
+        if (animate) div.classList.add('fade-in');
+        
+        if (sender === 'character') {
+            const char = CHARACTERS[this.state.currentCharacter];
+            div.innerHTML = `
+                <img src="${char.image}" alt="${char.name}" class="message-avatar">
+                <div class="message-content">${this.formatText(text)}</div>
+            `;
+        } else {
+            div.innerHTML = `<div class="message-content">${this.formatText(text)}</div>`;
+        }
+        
+        container.appendChild(div);
+        this.scrollToBottom();
+    },
+
+    formatText(text) {
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
+    },
+
+    clearChat() {
+        if (confirm('Clear this conversation?')) {
+            this.state.conversations[this.state.currentCharacter] = [];
+            this.saveState();
+            document.getElementById('chat-messages').innerHTML = '';
+            this.sendGreeting();
+        }
+    },
+
+    // AI INTEGRATION
+    async callAI(userMessage, history) {
+        if (this.state.accessMode === 'user') {
+            return await this.callGemma(userMessage, history);
+        } else {
+            return await this.callNvidia(userMessage, history);
+        }
+    },
+
+    async callGemma(userMessage, history) {
+        const char = CHARACTERS[this.state.currentCharacter];
+        
+        const context = history
+            .map(msg => `${msg.sender === 'user' ? 'User' : char.name}: ${msg.text}`)
+            .join('\n');
+        
+        const fullPrompt = `SYSTEM INSTRUCTION:
+${char.systemPrompt}
+
+${context ? `CONVERSATION HISTORY:\n${context}\n` : ''}
+USER MESSAGE:
+${userMessage}
+
+RESPOND AS ${char.name.toUpperCase()}:`;
+
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:generateContent?key=${this.state.apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: fullPrompt }] }],
+                    generationConfig: {
+                        temperature: 0.7,
+                        topK: 40,
+                        topP: 0.95,
+                        maxOutputTokens: CONFIG.maxOutputTokens
+                    }
+                })
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error('API request failed');
+        }
+
+        const data = await response.json();
+        return data.candidates[0].content.parts[0].text;
+    },
+
+    async callNvidia(userMessage, history) {
+        const char = CHARACTERS[this.state.currentCharacter];
+        
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: userMessage,
+                character: this.state.currentCharacter,
+                model: this.state.selectedModel,
+                systemPrompt: char.systemPrompt,
+                history: history.map(msg => ({
+                    role: msg.sender === 'user' ? 'user' : 'assistant',
+                    content: msg.text
+                }))
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Backend request failed');
+        }
+
+        const data = await response.json();
+        return data.response;
+    },
+
+    // UI UTILITIES
+    showLoading(text = 'Loading...') {
+        document.getElementById('loading-text').textContent = text;
+        document.getElementById('loading-overlay').classList.add('active');
+    },
+
+    hideLoading() {
+        document.getElementById('loading-overlay').classList.remove('active');
+    },
+
+    showTyping() {
+        document.getElementById('typing-indicator').classList.add('active');
+        document.getElementById('chat-input').disabled = true;
+        this.scrollToBottom();
+    },
+
+    hideTyping() {
+        document.getElementById('typing-indicator').classList.remove('active');
+        document.getElementById('chat-input').disabled = false;
+    },
+
+    scrollToBottom() {
+        const container = document.getElementById('chat-messages');
+        setTimeout(() => {
+            container.scrollTop = container.scrollHeight;
+        }, 100);
+    },
+
+    autoResize(textarea) {
+        textarea.style.height = 'auto';
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    },
+
+    // STATE MANAGEMENT
+    saveState() {
+        localStorage.setItem('prochat_state', JSON.stringify(this.state));
+    },
+
+    loadState() {
+        const saved = localStorage.getItem('prochat_state');
+        if (saved) {
+            try {
+                this.state = { ...this.state, ...JSON.parse(saved) };
+            } catch (e) {
+                console.error('Failed to load state:', e);
+            }
+        }
+    }
+};
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', () => app.init());
