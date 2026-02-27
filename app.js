@@ -1,7 +1,5 @@
 // CONFIG
 const CONFIG = {
-    adminPassword: 'sen@8',
-    adminVersion: 1,
     contextLimit: 15,
     maxOutputTokens: 1024
 };
@@ -123,12 +121,16 @@ const app = {
         });
     },
 
-    checkNavigationLock() {
+    async checkNavigationLock() {
         if (this.state.accessMode) {
-            // Check if admin version changed
-            if (this.state.accessMode === 'admin' && this.state.adminVersion !== CONFIG.adminVersion) {
-                this.showPasswordChangeMessage();
-                return;
+            // Check if admin version is still valid (password hasn't changed)
+            if (this.state.accessMode === 'admin' && this.state.adminVersion) {
+                // Verify version is still valid
+                const isValid = await this.verifyAdminVersion();
+                if (!isValid) {
+                    this.showPasswordChangeMessage();
+                    return;
+                }
             }
             // Navigate to appropriate screen
             if (this.state.currentCharacter) {
@@ -138,6 +140,25 @@ const app = {
             } else {
                 this.goToScreen('characters');
             }
+        }
+    },
+
+    async verifyAdminVersion() {
+        try {
+            // Make a dummy validation request to get current version
+            const response = await fetch('/api/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: '_check_version_' })
+            });
+            
+            const data = await response.json();
+            
+            // Compare stored version with current version
+            return data.version === this.state.adminVersion;
+        } catch (err) {
+            console.error('[Version Check Failed]', err);
+            return true; // Don't lock out on network error
         }
     },
 
@@ -237,8 +258,9 @@ const app = {
                 throw new Error('Invalid password');
             }
 
+            // Store version received from backend (auto-generated from password hash)
             this.state.accessMode = 'admin';
-            this.state.adminVersion = CONFIG.adminVersion;
+            this.state.adminVersion = data.version;
             this.saveState();
             this.hideLoading();
             this.goToScreen('models');
