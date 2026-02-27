@@ -4,7 +4,8 @@ const MODEL_MAP = {
     balanced: 'meta/llama-3.1-70b-instruct',
     smart: 'mistralai/mixtral-8x22b-instruct',
     pro: 'meta/llama-3.1-405b-instruct',
-    experimental: 'deepseek-ai/deepseek-v3.2'
+    experimental: 'deepseek-ai/deepseek-v3.2',
+    gemma: 'gemma-3-27b-it' // Special: uses Google API
 };
 
 export default async function handler(req, res) {
@@ -27,16 +28,22 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: 'Missing required fields' });
         }
 
+        const modelId = MODEL_MAP[model] || MODEL_MAP.balanced;
+        
+        console.log(`[Backend] Request: character=${character}, model=${model}`);
+
+        // Handle Gemma differently (Google API)
+        if (model === 'gemma') {
+            return await handleGemma(req, res, message, systemPrompt, history, character);
+        }
+
+        // Handle NVIDIA models
         const apiKey = process.env.NVIDIA_API_KEY;
         
         if (!apiKey) {
             console.error('[Backend] NVIDIA_API_KEY not configured');
             return res.status(500).json({ error: 'Server configuration error' });
         }
-
-        const modelId = MODEL_MAP[model] || MODEL_MAP.balanced;
-        
-        console.log(`[Backend] Request: character=${character}, model=${model}`);
 
         const messages = [
             {
@@ -101,5 +108,76 @@ export default async function handler(req, res) {
     } catch (error) {
         console.error('[Backend] Error:', error);
         return res.status(500).json({ error: 'Request failed' });
+    }
+}
+
+// Handle Gemma via Google API
+async function handleGemma(req, res, message, systemPrompt, history, character) {
+    const apiKey = process.env.GEMMA_API_KEY;
+    
+    if (!apiKey) {
+        console.error('[Backend] GEMMA_API_KEY not configured');
+        return res.status(500).json({ error: 'Gemma model not configured' });
+    }
+
+    // Build context from history
+    const context = history
+        .slice(-30)
+        .map(msg => `${msg.role === 'user' ? 'User' : character}: ${msg.content}`)
+        .join('\n');
+
+    const fullPrompt = `SYSTEM INSTRUCTION:
+${systemPrompt}
+
+${context ? `CONVERSATION HISTORY:\n${context}\n` : ''}
+USER MESSAGE:
+${message}
+
+RESPOND AS CHARACTER:`;
+
+    try {
+        const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemma-3-27b-it:generateContent?key=${apiKey}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: fullPrompt }] }],
+                    generationConfig: {
+                        temperature: 0.7,
+                        topK: 40,
+                        topP: 0.95,
+                        maxOutputTokens: 1024
+                    }
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const errorData = await response.text();
+            console.error(`[Backend] Gemma API Error (${response.status}):`, errorData);
+            return res.status(response.status).json({ error: 'Gemma API error' });
+        }
+
+        const data = await response.json();
+
+        if (!data.candidates || !data.candidates[0]) {
+            console.error('[Backend] Unexpected Gemma response:', data);
+            return res.status(500).json({ error: 'Invalid Gemma response' });
+        }
+
+        const aiResponse = data.candidates[0].content.parts[0].text;
+
+        return res.status(200).json({
+            response: aiResponse,
+            metadata: {
+                model: 'gemma-3-27b-it',
+                mode: 'gemma'
+            }
+        });
+
+    } catch (error) {
+        console.error('[Backend] Gemma Error:', error);
+        return res.status(500).json({ error: 'Gemma request failed' });
     }
 }
