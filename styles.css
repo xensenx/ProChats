@@ -863,20 +863,37 @@ body {
 .app-footer {
     background: var(--bg-secondary);
     border-top: 1px solid var(--border);
-    padding: 20px;
+    padding: 16px 20px;
     text-align: center;
+    position: relative;
+    z-index: 10;
+}
+
+/* Hide footer on chat screen */
+#screen-chat.active ~ .app-footer {
+    display: none;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-text {
     color: var(--text-tertiary);
     font-size: 0.9rem;
 }
 
-.app-footer a {
+.footer-link {
     color: var(--accent-light);
     text-decoration: none;
     transition: color var(--transition);
+    font-weight: 500;
 }
 
-.app-footer a:hover {
+.footer-link:hover {
     color: var(--accent);
+    text-decoration: underline;
 }
 
 /* SCROLLBAR */

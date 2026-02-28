@@ -101,15 +101,19 @@ const app = {
         const sendBtn = document.getElementById('send-btn');
 
         chatInput?.addEventListener('input', (e) => {
-            sendBtn.disabled = !e.target.value.trim();
+            if (sendBtn) sendBtn.disabled = !e.target.value.trim();
             this.autoResize(e.target);
         });
 
         chatInput?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                if (!sendBtn.disabled) this.sendMessage();
+                if (sendBtn && !sendBtn.disabled) this.sendMessage();
             }
+        });
+
+        sendBtn?.addEventListener('click', () => {
+            if (!sendBtn.disabled) this.sendMessage();
         });
 
         // Prevent back navigation
@@ -406,13 +410,14 @@ const app = {
 
     async sendMessage() {
         const input = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
         const text = input.value.trim();
         
-        if (!text) return;
+        if (!text || !sendBtn) return;
         
         input.value = '';
         input.style.height = 'auto';
-        document.getElementById('send-btn').disabled = true;
+        sendBtn.disabled = true;
         
         this.addMessage(text, 'user');
         this.showTyping();
@@ -424,6 +429,7 @@ const app = {
             this.addMessage(response, 'character');
         } catch (err) {
             this.hideTyping();
+            console.error('[Send Error]', err);
             this.addMessage("I'm having trouble responding. Please try again.", 'character');
         }
         
@@ -595,10 +601,12 @@ RESPOND AS ${char.name.toUpperCase()}:`;
     },
 
     scrollToBottom() {
-        const container = document.getElementById('chat-messages');
-        setTimeout(() => {
-            container.scrollTop = container.scrollHeight;
-        }, 100);
+        const container = document.querySelector('.chat-messages-container');
+        if (container) {
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 100);
+        }
     },
 
     autoResize(textarea) {
