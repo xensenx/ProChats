@@ -88,8 +88,22 @@ const app = {
     },
 
     // INITIALIZATION
+    registerServiceWorker() {
+        if (!('serviceWorker' in navigator)) return;
+
+        window.addEventListener('load', async () => {
+            try {
+                await navigator.serviceWorker.register('/sw.js');
+                console.log('[ProChat] Service worker registered');
+            } catch (err) {
+                console.warn('[ProChat] Service worker registration failed', err);
+            }
+        });
+    },
+
     init() {
         console.log('[ProChat] Initializing...');
+        this.registerServiceWorker();
         this.loadState();
         this.setupEventListeners();
         this.checkNavigationLock();
