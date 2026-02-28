@@ -1,10 +1,11 @@
-const CACHE_NAME = 'prochat-v1';
+const CACHE_NAME = 'prochat-v2';
 const APP_SHELL = [
   '/',
   '/index.html',
   '/styles.css',
   '/app.js',
   '/manifest.webmanifest',
+  '/favicon.ico',
   '/assets/Frieren.png',
   '/assets/Nao-Tomori.png',
   '/assets/Thorfinn.png'
