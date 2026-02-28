@@ -57,4 +57,4 @@ You need to configure the following environment variables on your hosting provid
 
 ## License
 
-This project is open-source. Please check the included `LICENSE` file for more details.
+This project is NOT open-source. Please check the included `LICENSE` file for more details.
