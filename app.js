@@ -631,5 +631,8 @@ RESPOND AS ${char.name.toUpperCase()}:`;
     }
 };
 
+// Expose app globally for onclick handlers
+window.app = app;
+
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => app.init());
