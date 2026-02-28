@@ -120,7 +120,7 @@
                     <div class="model-card" onclick="app.selectModel('smart')">
                         <div class="model-icon">🧠</div>
                         <h3>Smart</h3>
-                        <p>Strong reasoning capabilities(facing server issues currently!)</p>
+                        <p>Strong reasoning capabilities</p>
                         <div class="model-specs">
                             <span>Speed: ●●●○○</span>
                             <span>Quality: ●●●●●</span>
@@ -130,7 +130,7 @@
                     <div class="model-card" onclick="app.selectModel('pro')">
                         <div class="model-icon">💎</div>
                         <h3>Pro</h3>
-                        <p>Maximum intelligence(facing server issues currently!)</p>
+                        <p>Maximum intelligence</p>
                         <div class="model-specs">
                             <span>Speed: ●●○○○</span>
                             <span>Quality: ●●●●●</span>
@@ -223,23 +223,29 @@
 
         <!-- SCREEN: CHAT -->
         <section id="screen-chat" class="screen">
-            <div class="chat-container">
+            <div class="chat-layout">
+                <!-- Fixed Header -->
                 <div class="chat-header">
-                    <div class="chat-character-info">
+                    <div class="chat-header-left">
                         <img id="chat-avatar" src="" alt="" class="chat-avatar">
-                        <div>
+                        <div class="chat-header-info">
                             <h3 id="chat-character-name"></h3>
-                            <span class="chat-status">Online</span>
+                            <span class="chat-status">
+                                <span class="status-dot"></span>
+                                Online
+                            </span>
                         </div>
                     </div>
-                    <div class="chat-actions">
-                        <button onclick="app.goToCharacters()" title="Change character">
+                    <div class="chat-header-actions">
+                        <button class="icon-btn" onclick="app.goToCharacters()" title="Change character">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                                 <circle cx="9" cy="7" r="4"/>
+                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                             </svg>
                         </button>
-                        <button onclick="app.clearChat()" title="Clear conversation">
+                        <button class="icon-btn" onclick="app.clearChat()" title="Clear conversation">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -247,18 +253,31 @@
                         </button>
                     </div>
                 </div>
-                
-                <div class="chat-messages" id="chat-messages"></div>
-                
-                <div class="chat-input-area">
+
+                <!-- Messages Container -->
+                <div class="chat-messages-container">
+                    <div id="chat-messages" class="chat-messages"></div>
+                </div>
+
+                <!-- Fixed Input Area -->
+                <div class="chat-input-container">
                     <div class="typing-indicator" id="typing-indicator">
-                        <span></span><span></span><span></span>
+                        <div class="typing-dots">
+                            <span></span><span></span><span></span>
+                        </div>
+                        <span class="typing-text">Typing...</span>
                     </div>
                     <div class="chat-input-wrapper">
-                        <textarea id="chat-input" placeholder="Type your message..." rows="1"></textarea>
-                        <button id="send-btn" onclick="app.sendMessage()" disabled>
+                        <textarea 
+                            id="chat-input" 
+                            placeholder="Type your message..." 
+                            rows="1"
+                            maxlength="2000"
+                        ></textarea>
+                        <button id="send-btn" class="send-btn" onclick="app.sendMessage()" disabled>
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                                <path d="M22 2L11 13"/>
+                                <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
                             </svg>
                         </button>
                     </div>
@@ -277,7 +296,7 @@
     <!-- Footer -->
      <footer class="app-footer">
         <div class="footer-content">
-            <span class="footer-text">ProChat • © 2026 • <a href="https://github.com/xensenx" target="_blank" class="footer-link">xensenx</a></span>
+            <span class="footer-text">Proxen • © 2026 • <a href="https://github.com/xensenx" target="_blank" class="footer-link">xensenx</a></span>
         </div>
     </footer>
 

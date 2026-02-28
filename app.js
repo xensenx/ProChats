@@ -451,15 +451,30 @@ const app = {
         div.className = `message ${sender}-message`;
         if (animate) div.classList.add('fade-in');
         
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+        });
+        
         if (sender === 'character') {
             const char = CHARACTERS[this.state.currentCharacter];
             if (!char) return; // Safety check
             div.innerHTML = `
                 <img src="${char.image}" alt="${char.name}" class="message-avatar">
-                <div class="message-content">${this.formatText(text)}</div>
+                <div class="message-bubble">
+                    <div class="message-content">${this.formatText(text)}</div>
+                    <div class="message-time">${timeString}</div>
+                </div>
             `;
         } else {
-            div.innerHTML = `<div class="message-content">${this.formatText(text)}</div>`;
+            div.innerHTML = `
+                <div class="message-bubble">
+                    <div class="message-content">${this.formatText(text)}</div>
+                    <div class="message-time">${timeString}</div>
+                </div>
+            `;
         }
         
         container.appendChild(div);
