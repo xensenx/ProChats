@@ -132,9 +132,23 @@ const app = {
                     return;
                 }
             }
+            
+            // Show change model button if admin mode
+            if (this.state.accessMode === 'admin') {
+                const btn = document.getElementById('change-model-btn');
+                if (btn) btn.style.display = 'block';
+            }
+            
             // Navigate to appropriate screen
             if (this.state.currentCharacter) {
+                // Restore character UI data
+                const char = CHARACTERS[this.state.currentCharacter];
+                if (char) {
+                    document.getElementById('chat-avatar').src = char.image;
+                    document.getElementById('chat-character-name').textContent = char.name;
+                }
                 this.goToScreen('chat');
+                this.loadChatHistory();
             } else if (this.state.accessMode === 'admin' && !this.state.selectedModel) {
                 this.goToScreen('models');
             } else {
@@ -307,6 +321,11 @@ const app = {
     },
 
     goToCharacters() {
+        // Show change model button if admin mode
+        if (this.state.accessMode === 'admin') {
+            const btn = document.getElementById('change-model-btn');
+            if (btn) btn.style.display = 'block';
+        }
         this.goToScreen('characters');
     },
 
@@ -360,6 +379,8 @@ const app = {
     // CHAT FUNCTIONS
     loadChatHistory() {
         const container = document.getElementById('chat-messages');
+        if (!container) return; // Safety check
+        
         container.innerHTML = '';
         
         const messages = this.state.conversations[this.state.currentCharacter] || [];
@@ -424,12 +445,15 @@ const app = {
 
     addMessageToUI(text, sender, animate) {
         const container = document.getElementById('chat-messages');
+        if (!container) return; // Safety check
+        
         const div = document.createElement('div');
         div.className = `message ${sender}-message`;
         if (animate) div.classList.add('fade-in');
         
         if (sender === 'character') {
             const char = CHARACTERS[this.state.currentCharacter];
+            if (!char) return; // Safety check
             div.innerHTML = `
                 <img src="${char.image}" alt="${char.name}" class="message-avatar">
                 <div class="message-content">${this.formatText(text)}</div>
