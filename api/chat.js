@@ -2,8 +2,8 @@
 const MODEL_MAP = {
     fast: 'meta/llama-3.1-8b-instruct',
     balanced: 'meta/llama-3.1-70b-instruct',
-    smart: 'mistralai/mixtral-8x22b-instruct',
-    pro: 'meta/llama-3.1-405b-instruct',
+    smart: 'nvidia/llama-3.1-nemotron-ultra-253b-v1',
+    pro: 'nvidia/llama-3.3-nemotron-super-49b-v1.5',
     experimental: 'deepseek-ai/deepseek-v3.2',
     gemma: 'gemma-3-27b-it' // Special: uses Google API
 };
