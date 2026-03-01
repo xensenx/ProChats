@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#6c5ce7">
     <meta name="description" content="Chat with AI-powered anime characters in an installable progressive web app.">
-    <link rel="icon" href="/favicon.ico" sizes="any" type="image/x-icon">
-    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="apple-touch-icon" href="assets/Frieren.png">
     <title>ProChat - AI Character Conversations</title>
@@ -126,7 +124,7 @@
                     <div class="model-card" onclick="app.selectModel('smart')">
                         <div class="model-icon">🧠</div>
                         <h3>Smart</h3>
-                        <p>Strong reasoning capabilities ⚠️ This Model is Currently facing server issues !!</p>
+                        <p>Strong reasoning capabilities</p>
                         <div class="model-specs">
                             <span>Speed: ●●●○○</span>
                             <span>Quality: ●●●●●</span>
@@ -136,7 +134,7 @@
                     <div class="model-card" onclick="app.selectModel('pro')">
                         <div class="model-icon">💎</div>
                         <h3>Pro</h3>
-                        <p>Maximum intelligence ⚠️ This Model is Currently Facing server issues !!</p>
+                        <p>Maximum intelligence</p>
                         <div class="model-specs">
                             <span>Speed: ●●○○○</span>
                             <span>Quality: ●●●●●</span>
@@ -171,7 +169,7 @@
             <div class="characters-container">
                 <div class="characters-header">
                     <h2 class="screen-title">Select Character</h2>
-                    <button class="settings-btn" onclick="app.toggleSettings()">
+                    <button class="settings-btn" onclick="app.toggleSettings()" aria-label="Open settings menu">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <circle cx="12" cy="12" r="3"/>
                             <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"/>
@@ -180,47 +178,53 @@
                 </div>
                 
                 <!-- Settings Menu (Hidden by default) -->
-                <div class="settings-menu" id="settings-menu">
-                    <button onclick="app.resetSystem()">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <div class="settings-menu" id="settings-menu" role="menu" aria-label="Settings menu">
+                    <button onclick="app.resetSystem()" aria-label="Reset system and clear all data">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M3 21v-5h5"/>
                         </svg>
                         Reset System
                     </button>
-                    <button onclick="app.exportAllChats()">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button onclick="app.exportAllChats()" aria-label="Export all conversations">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
                         </svg>
                         Export All Chats
                     </button>
-                    <button id="change-model-btn" onclick="app.changeModel()" style="display: none;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <button id="change-model-btn" onclick="app.changeModel()" style="display: none;" aria-label="Change AI model">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
                             <circle cx="12" cy="12" r="3"/>
                             <path d="M12 1v6m0 6v6"/>
                         </svg>
                         Change Model
                     </button>
+                    <button id="theme-toggle-btn" onclick="app.toggleTheme()" aria-label="Toggle dark/light theme">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                        </svg>
+                        <span id="theme-toggle-text">Light Mode</span>
+                    </button>
                 </div>
                 
                 <div class="characters-grid">
-                    <div class="character-card" onclick="app.selectCharacter('frieren')">
-                        <img src="assets/Frieren.png" alt="Frieren" class="character-img">
+                    <div class="character-card" onclick="app.selectCharacter('frieren')" role="button" tabindex="0" aria-label="Select Frieren character">
+                        <img src="assets/Frieren.png" alt="Frieren" class="character-img" loading="lazy">
                         <h3>Frieren</h3>
                         <p class="character-role">Ancient Elf Mage</p>
                         <p class="character-role">Anime : Frieren : Beyond journeys End</p>
                         <p class="character-desc">A thousand-year-old mage learning about human connections</p>
                     </div>
                     
-                    <div class="character-card" onclick="app.selectCharacter('nao')">
-                        <img src="assets/Nao-Tomori.png" alt="Nao Tomori" class="character-img">
+                    <div class="character-card" onclick="app.selectCharacter('nao')" role="button" tabindex="0" aria-label="Select Nao Tomori character">
+                        <img src="assets/Nao-Tomori.png" alt="Nao Tomori" class="character-img" loading="lazy">
                         <h3>Nao Tomori</h3>
                         <p class="character-role">Student Council President</p>
                         <p class="character-role">Anime : Charlotte</p>
                         <p class="character-desc">An High-school intellect with a sharp tongue and kind heart</p>
                     </div>
                     
-                    <div class="character-card" onclick="app.selectCharacter('thorfinn')">
-                        <img src="assets/Thorfinn.png" alt="Thorfinn" class="character-img">
+                    <div class="character-card" onclick="app.selectCharacter('thorfinn')" role="button" tabindex="0" aria-label="Select Thorfinn character">
+                        <img src="assets/Thorfinn.png" alt="Thorfinn" class="character-img" loading="lazy">
                         <h3>Thorfinn</h3>
                         <p class="character-role">Pacifist Warrior</p>
                         <p class="character-role">Anime : Vinland Saga</p>
@@ -246,7 +250,7 @@
                         </div>
                     </div>
                     <div class="chat-header-actions">
-                        <button class="icon-btn" onclick="app.goToCharacters()" title="Change character">
+                        <button class="icon-btn" onclick="app.goToCharacters()" title="Change character" aria-label="Change character">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                                 <circle cx="9" cy="7" r="4"/>
@@ -254,7 +258,7 @@
                                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                             </svg>
                         </button>
-                        <button class="icon-btn" onclick="app.clearChat()" title="Clear conversation">
+                        <button class="icon-btn" onclick="app.clearChat()" title="Clear conversation" aria-label="Clear conversation">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="3 6 5 6 21 6"/>
                                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -283,7 +287,7 @@
                             rows="1"
                             maxlength="2000"
                         ></textarea>
-                        <button id="send-btn" class="send-btn" disabled>
+                        <button id="send-btn" class="send-btn" disabled aria-label="Send message">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 2L11 13"/>
                                 <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
@@ -299,6 +303,27 @@
             <div class="spinner"></div>
             <p id="loading-text">Initializing...</p>
         </div>
+
+        <!-- Offline Indicator -->
+        <div class="offline-indicator" id="offline-indicator">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="1" y1="1" x2="23" y2="23"/>
+                <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/>
+                <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/>
+                <path d="M10.71 5.05A16 16 0 0 1 22.58 9"/>
+                <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                <line x1="12" y1="20" x2="12.01" y2="20"/>
+            </svg>
+            <span>You're offline</span>
+        </div>
+
+        <!-- Scroll to Bottom Button -->
+        <button class="scroll-to-bottom" id="scroll-to-bottom" aria-label="Scroll to bottom">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14M19 12l-7 7-7-7"/>
+            </svg>
+        </button>
 
     </div>
 
