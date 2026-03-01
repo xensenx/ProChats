@@ -4,34 +4,6 @@ const CONFIG = {
     maxOutputTokens: 1024
 };
 
-// UTILITY FUNCTIONS
-const utils = {
-    // XSS Prevention: Sanitize user input
-    sanitizeHTML(str) {
-        const temp = document.createElement('div');
-        temp.textContent = str;
-        return temp.innerHTML;
-    },
-    
-    // Escape HTML for safe display
-    escapeHTML(str) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#x27;',
-            '/': '&#x2F;'
-        };
-        return str.replace(/[&<>"'/]/g, (char) => map[char]);
-    },
-    
-    // Check if online
-    isOnline() {
-        return navigator.onLine;
-    }
-};
-
 // CHARACTER DEFINITIONS
 const CHARACTERS = {
     frieren: {
@@ -112,8 +84,7 @@ const app = {
             frieren: [],
             nao: [],
             thorfinn: []
-        },
-        theme: 'dark' // Add theme state
+        }
     },
 
     // INITIALIZATION
@@ -134,10 +105,7 @@ const app = {
         console.log('[ProChat] Initializing...');
         this.registerServiceWorker();
         this.loadState();
-        this.applyTheme();
         this.setupEventListeners();
-        this.setupOfflineDetection();
-        this.setupGlobalErrorHandler();
         this.checkNavigationLock();
         this.showScreen(this.state.currentScreen);
     },
@@ -145,10 +113,7 @@ const app = {
     setupEventListeners() {
         const chatInput = document.getElementById('chat-input');
         const sendBtn = document.getElementById('send-btn');
-        const scrollToBottomBtn = document.getElementById('scroll-to-bottom');
-        const messagesContainer = document.querySelector('.chat-messages-container');
 
-        // Chat input handlers with sanitization
         chatInput?.addEventListener('input', (e) => {
             if (sendBtn) sendBtn.disabled = !e.target.value.trim();
             this.autoResize(e.target);
@@ -165,44 +130,12 @@ const app = {
             if (!sendBtn.disabled) this.sendMessage();
         });
 
-        // Scroll to bottom button
-        if (scrollToBottomBtn && messagesContainer) {
-            // Show/hide scroll button based on scroll position
-            messagesContainer.addEventListener('scroll', () => {
-                const isNearBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 100;
-                scrollToBottomBtn.classList.toggle('visible', !isNearBottom);
-            });
-
-            scrollToBottomBtn.addEventListener('click', () => {
-                this.scrollToBottom(true); // Smooth scroll
-            });
-        }
-
-        // Mobile keyboard handling - scroll input into view
-        if (chatInput) {
-            chatInput.addEventListener('focus', () => {
-                setTimeout(() => {
-                    chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 300); // Wait for keyboard animation
-            });
-        }
-
         // Prevent back navigation
         window.addEventListener('popstate', (e) => {
             if (this.state.accessMode) {
                 e.preventDefault();
                 history.pushState(null, '', location.href);
             }
-        });
-
-        // Handle keyboard for character cards
-        document.querySelectorAll('.character-card').forEach(card => {
-            card.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    card.click();
-                }
-            });
         });
     },
 
@@ -259,54 +192,6 @@ const app = {
             console.error('[Version Check Failed]', err);
             return true; // Don't lock out on network error
         }
-    },
-
-    setupOfflineDetection() {
-        const offlineIndicator = document.getElementById('offline-indicator');
-        if (!offlineIndicator) return;
-
-        const updateOnlineStatus = () => {
-            if (utils.isOnline()) {
-                offlineIndicator.classList.remove('visible');
-            } else {
-                offlineIndicator.classList.add('visible');
-            }
-        };
-
-        window.addEventListener('online', updateOnlineStatus);
-        window.addEventListener('offline', updateOnlineStatus);
-        updateOnlineStatus(); // Initial check
-    },
-
-    setupGlobalErrorHandler() {
-        window.addEventListener('error', (event) => {
-            console.error('[Global Error]', event.error);
-            // Don't show error for resource loading failures
-            if (event.message.includes('Script error')) return;
-            
-            this.showError('An unexpected error occurred. Please refresh the page.');
-        });
-
-        window.addEventListener('unhandledrejection', (event) => {
-            console.error('[Unhandled Promise Rejection]', event.reason);
-            this.showError('A connection error occurred. Please try again.');
-        });
-    },
-
-    showError(message) {
-        // Simple error notification
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'error-toast';
-        errorDiv.textContent = message;
-        errorDiv.setAttribute('role', 'alert');
-        errorDiv.setAttribute('aria-live', 'polite');
-        document.body.appendChild(errorDiv);
-        
-        setTimeout(() => errorDiv.classList.add('visible'), 10);
-        setTimeout(() => {
-            errorDiv.classList.remove('visible');
-            setTimeout(() => errorDiv.remove(), 300);
-        }, 4000);
     },
 
     showPasswordChangeMessage() {
@@ -467,37 +352,6 @@ const app = {
         document.getElementById('settings-menu').classList.toggle('active');
     },
 
-    toggleTheme() {
-        this.state.theme = this.state.theme === 'dark' ? 'light' : 'dark';
-        this.saveState();
-        this.applyTheme();
-    },
-
-    applyTheme() {
-        const root = document.documentElement;
-        const themeText = document.getElementById('theme-toggle-text');
-        
-        if (this.state.theme === 'light') {
-            root.setAttribute('data-theme', 'light');
-            if (themeText) themeText.textContent = 'Dark Mode';
-        } else {
-            root.setAttribute('data-theme', 'dark');
-            if (themeText) themeText.textContent = 'Light Mode';
-        }
-    },
-
-    copyMessage(text) {
-        // Sanitize before copying
-        const sanitized = utils.escapeHTML(text);
-        
-        navigator.clipboard.writeText(sanitized).then(() => {
-            this.showError('Message copied to clipboard!');
-        }).catch(err => {
-            console.error('[Copy failed]', err);
-            this.showError('Failed to copy message');
-        });
-    },
-
     resetSystem() {
         if (confirm('This will clear all data and reset the system. Continue?')) {
             localStorage.removeItem('prochat_state');
@@ -571,18 +425,9 @@ const app = {
     async sendMessage() {
         const input = document.getElementById('chat-input');
         const sendBtn = document.getElementById('send-btn');
-        let text = input.value.trim();
+        const text = input.value.trim();
         
         if (!text || !sendBtn) return;
-        
-        // Sanitize user input to prevent XSS
-        text = utils.sanitizeHTML(text);
-        
-        // Check if online before sending
-        if (!utils.isOnline()) {
-            this.showError('You are offline. Please check your connection.');
-            return;
-        }
         
         input.value = '';
         input.style.height = 'auto';
@@ -599,7 +444,6 @@ const app = {
         } catch (err) {
             this.hideTyping();
             console.error('[Send Error]', err);
-            this.showError("I'm having trouble responding. Please try again.");
             this.addMessage("I'm having trouble responding. Please try again.", 'character');
         }
         
@@ -634,37 +478,21 @@ const app = {
             hour12: true 
         });
         
-        // Create copy button
-        const copyBtn = `
-            <button class="copy-btn" onclick="app.copyMessage(\`${text.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)" aria-label="Copy message" title="Copy message">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                </svg>
-            </button>
-        `;
-        
         if (sender === 'character') {
             const char = CHARACTERS[this.state.currentCharacter];
             if (!char) return; // Safety check
             div.innerHTML = `
-                <img src="${char.image}" alt="${char.name}" class="message-avatar" loading="lazy">
+                <img src="${char.image}" alt="${char.name}" class="message-avatar">
                 <div class="message-bubble">
                     <div class="message-content">${this.formatText(text)}</div>
-                    <div class="message-footer">
-                        <div class="message-time">${timeString}</div>
-                        ${copyBtn}
-                    </div>
+                    <div class="message-time">${timeString}</div>
                 </div>
             `;
         } else {
             div.innerHTML = `
                 <div class="message-bubble">
                     <div class="message-content">${this.formatText(text)}</div>
-                    <div class="message-footer">
-                        <div class="message-time">${timeString}</div>
-                        ${copyBtn}
-                    </div>
+                    <div class="message-time">${timeString}</div>
                 </div>
             `;
         }
@@ -786,18 +614,11 @@ RESPOND AS ${char.name.toUpperCase()}:`;
         document.getElementById('chat-input').disabled = false;
     },
 
-    scrollToBottom(smooth = false) {
+    scrollToBottom() {
         const container = document.querySelector('.chat-messages-container');
         if (container) {
             setTimeout(() => {
-                if (smooth) {
-                    container.scrollTo({
-                        top: container.scrollHeight,
-                        behavior: 'smooth'
-                    });
-                } else {
-                    container.scrollTop = container.scrollHeight;
-                }
+                container.scrollTop = container.scrollHeight;
             }, 100);
         }
     },
